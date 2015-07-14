@@ -1,5 +1,6 @@
 import fcntl
 import os
+import socket
 import sys
 
 TTY_MAJOR = 4
@@ -12,19 +13,26 @@ KD_TEXT = 0x00
 KD_GRAPHICS = 0x01
 
 
-class TTY(object):
+class Launcher(object):
     def __init__(self):
         self._prev_mode = None
 
-        tty = sys.stdin.fileno()
+
+    def setup(self, tty=None):
+        if tty is None:
+            tty = sys.stdin.fileno()
+
+        self.setup_tty(tty)
+
+    def finalize(self):
+        self.finalize_tty()
+
+    def setup_tty(self, tty):
         buf = os.fstat(tty)
 
         if os.major(buf.st_rdev) != TTY_MAJOR or os.minor(buf.st_rdev) == 0:
             raise RuntimeError("qtile-launch must be run from a virtual terminal")
 
-        self.tty = tty
-
-    def setup(self):
         buf = bytearray(1)
         fcntl.ioctl(self.tty, KDGKBMODE, buf)
 
@@ -39,7 +47,7 @@ class TTY(object):
                 f.write('failed set graphics\n')
             raise RuntimeError("unable to set KD_GRAPHICS on tty")
 
-    def finalize(self):
+    def finalize_tty(self):
         # reset keyboard
         if self._prev_mode and fcntl.ioctl(self.tty, KDSKBMODE, self._prev_mode):
             with open('/home/sean/log', 'a') as f:

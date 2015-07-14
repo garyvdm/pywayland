@@ -1,8 +1,10 @@
 from pywayland.server import Display
-from pywayland.protocol import Compositor as CompositorProtocol, Subcompositor
+from pywayland.protocol import Compositor as CompositorProtocol, Subcompositor, Surface
 import os
 import signal
 import sys
+
+keep = []
 
 
 def _terminate(sig_num, display):
@@ -11,14 +13,16 @@ def _terminate(sig_num, display):
     return 0
 
 
-def create_surface(*args):
-    print(args)
+def create_surface(compositor):
+    print('create: ', compositor)
+
 
 def create_region(*args):
     print(args)
 
 
 def _bind_compositor(resource):
+    keep.append(resource)
     resource.listener['create_surface'] = create_surface
     resource.listener['create_region'] = create_region
 

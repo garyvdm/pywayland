@@ -1,16 +1,14 @@
-import sys
+from compositor.launcher import Launcher
+t = Launcher()
+t.setup()
 
-from compositor.compositor import Compositor
-from compositor.tty import TTY
+try:
+    pass
+finally:
+    t.finalize()
 
-c = Compositor()
-c.init_display()
-c.init_socket()
-c.run()
-#t = TTY()
-#t.setup()
-
-#try:
-#    pass
-#finally:
-#    t.finalize()
+#from compositor.compositor import Compositor
+#c = Compositor()
+#c.init_display()
+#c.init_socket()
+#c.run()
