@@ -1,9 +1,8 @@
 from compositor.launcher import Launcher
 t = Launcher()
-t.setup()
 
 try:
-    pass
+    t.setup()
 finally:
     t.finalize()
 
