@@ -3,6 +3,8 @@ t = Launcher()
 
 try:
     t.setup()
+    import time
+    time.sleep(3)
 finally:
     t.finalize()
 

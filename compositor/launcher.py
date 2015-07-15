@@ -1,45 +1,29 @@
-from cffi import FFI
+from ._ffi_launcher import ffi, lib
 import fcntl
 import os
 import signal
 import sys
 
-TTY_MAJOR = 4
+TTY_MAJOR = lib.TTY_MAJOR
 
-KDGKBMODE = 0x4b44
-KDSKBMODE = 0x4b45
-KDSETMODE = 0x4b3a
-KDGETMODE = 0x4b3b
+KDGKBMODE = lib.KDGKBMODE
+KDSKBMODE = lib.KDSKBMODE
+KDSETMODE = lib.KDSETMODE
+KDGETMODE = lib.KDGETMODE
 
-K_OFF = 0x04
-KD_GRAPHICS = 0x01
+K_OFF = lib.K_OFF
+KD_GRAPHICS = lib.KD_GRAPHICS
 
-VT_SETMODE = 0x5602
-VT_AUTO = b'\x00'
-VT_PROCESS = b'\x01'
+VT_SETMODE = lib.VT_SETMODE
+VT_AUTO = bytes(bytearray([lib.VT_AUTO]))
+VT_PROCESS = bytes(bytearray([lib.VT_PROCESS]))
+VT_ACKACQ = bytes(bytearray([lib.VT_ACKACQ]))
 
-ffi = FFI()
-ffi.cdef("""
-struct vt_mode {
-    char mode;          /* vt mode */
-    char waitv;         /* if set, hang on writes if not active */
-    short relsig;       /* signal to raise on release req */
-    short acqsig;       /* signal to raise on acquisition */
-    short frsig;        /* unused (set to 0) */
-};
-""")
+VT_RELDISP = lib.VT_RELDISP
 
 
-def handle_chld(signum, frame):
-    pass
-
-
-def handle_usr1(signum, frame):
-    pass
-
-
-def handle_usr2(signum, frame):
-    pass
+def _mkhandler(self, func):
+    return lambda n, s: func(self, n, s)
 
 
 class Launcher(object):
@@ -55,6 +39,19 @@ class Launcher(object):
     def __exit__(self, exception_type, exception_value, traceback):
         self.finalize()
 
+    def handle_chld(self, signum, stack):
+        _, status = os.wait()
+        print('Server exited with status {:d}'.format(os.WEXITSTATUS(status)), file=sys.stderr)
+        # TODO: figure out how to run/kill the launcher... asyncio event loop maybe? or wayland event loop?
+
+    def handle_usr1(self, signum, stack):
+        # TODO: send deactivate...
+        fnctl.ioctl(self.tty, VT_RELDISP, 1);
+
+    def handle_usr2(self, signum, stack):
+        fnctl.ioctl(self.tty, VT_RELDISP, VT_ACKACQ)
+        # TODO: send activate...
+
     def setup(self, tty=None):
         if tty is None:
             tty = sys.stdin.fileno()
@@ -67,7 +64,7 @@ class Launcher(object):
         self.finalize_tty()
 
     def setup_signals(self):
-        signal.signal(signal.SIGCHLD, handle_chld)
+        signal.signal(signal.SIGCHLD, _mkhandler(self, Launcher.handle_chld))
 
     def finalize_signals(self):
         pass

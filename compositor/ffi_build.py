@@ -1,0 +1,39 @@
+from cffi import FFI
+
+ffi = FFI()
+
+ffi.set_source('compositor._ffi_launcher', """
+#include <linux/kd.h>
+#include <linux/major.h>
+#include <linux/vt.h>
+""")
+
+ffi.cdef("""
+#define TTY_MAJOR ...
+
+#define KDGKBMODE ...
+#define KDSKBMODE ...
+#define KDSETMODE ...
+#define KDGETMODE ...
+
+#define K_OFF ...
+#define KD_GRAPHICS ...
+
+#define VT_SETMODE ...
+#define VT_AUTO ...
+#define VT_PROCESS ...
+#define VT_ACKACQ ...
+
+#define VT_RELDISP ...
+
+struct vt_mode {
+    char mode;          /* vt mode */
+    char waitv;         /* if set, hang on writes if not active */
+    short relsig;       /* signal to raise on release req */
+    short acqsig;       /* signal to raise on acquisition */
+    short frsig;        /* unused (set to 0) */
+};
+""")
+
+if __name__ == '__main__':
+    ffi.compile()
